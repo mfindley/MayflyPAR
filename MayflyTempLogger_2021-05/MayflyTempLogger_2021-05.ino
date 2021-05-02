@@ -31,6 +31,10 @@
  
 #define   SD_SS_PIN 12 // Digital pin 12 is the MicroSD slave select pin on the Mayfly
 
+#define   PWR_SWITCH_PIN 22 // Digital pin 22 switches the power on and off
+
+#define   UTA_PIN A0 // reads the LI-COR through the UTA using analog pin A0
+
 char*     filename = (char*)"logfile.csv"; // The data log file
 
 // https://stackoverflow.com/questions/20944784/why-is-conversion-from-string-constant-to-char-valid-in-c-but-invalid-in-c
@@ -39,7 +43,7 @@ char*     filename = (char*)"logfile.csv"; // The data log file
 // #define   LOGGERNAME "SampleLogger"
 
 // Data Header
-#define   DATA_HEADER "Sampling Feature UUID: Front Stoop 716 Mohawk, Boulder, CO,,,\r\nSensor Name:,Maxim_DS18B20,EnviroDIY_Mayfly Data Logger,EnviroDIY_Mayfly Data Logger\r\nVariable Name:,Temperature_C,Battery_Voltage,Board_Temp_C\r\nResult Unit:,degreeCelsius,volt,degreeCelsius\r\nResult UUID:,[variable 1 UUID],[variable 1 UUID],[variable 1 UUID]\r\nDate and Time in UTC-5,Temperature,Battery voltage,Temperature"
+#define   DATA_HEADER "Sampling Feature UUID: Front Stoop 716 Mohawk, Boulder, CO,,,\r\nSensor Name:,Maxim_DS18B20,LICOR_LI-190SA-50,EnviroDIY_Mayfly Data Logger,EnviroDIY_Mayfly Data Logger\r\nVariable Name:,Temperature_C,PAR,Battery_Voltage,Board_Temp_C\r\nResult Unit:,degreeCelsius,umol s^-1 m^-2,volt,degreeCelsius\r\nResult UUID:,[variable 1 UUID],[PAR UUID],[variable 1 UUID],[variable 1 UUID]\r\nDate and Time in MDT,Temperature,PPFD,Battery voltage,Temperature"
 
 #define   ONE_WIRE_BUS 4 // pin 4 (D4-5)
 
@@ -65,6 +69,9 @@ float     boardtemp;
 int       batteryPin = A6; // select the input pin for the potentiometer
 int       batterysenseValue = 0; // variable to store the value coming from the sensor
 float     batteryvoltage;
+
+int       PARsenseValue = 0;  // 10-bit integer off the Mayfly's onboard ADC.
+float     PAR; // converted from 10-bit integer to umol / m^2 s
 
 /*
  * --------------------------------------------------
@@ -212,7 +219,6 @@ void systemSleep()
  
 void sensorsSleep()
 {
-
 }
 
 /*
@@ -228,7 +234,6 @@ void sensorsSleep()
  
 void sensorsWake()
 {
-
 }
 
 /*
@@ -424,6 +429,10 @@ String createDataRecord()
     // data += (DallasTemperature::toFahrenheit(tempC)); // temperature Fahrenheit
     
   }
+  // PAR ------------------------------------------------------
+
+  data += ",";
+  addFloatToString(data, 1852.2413, 6, 2);  // need to swap in an actual value, but let's use a constant dummy number for now.
 
   // Battery Voltage and Board Temperature --------------------
 
@@ -501,6 +510,7 @@ void setup()
 
   pinMode(8, OUTPUT);
   pinMode(9, OUTPUT);
+  pinMode(PWR_SWITCH_PIN, OUTPUT);
  
   greenred4flash(); // blink the LEDs to show the board is on
 
