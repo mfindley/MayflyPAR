@@ -45,7 +45,7 @@ char*     filename = (char*)"logfile.csv"; // The data log file
 // Data Header
 #define   DATA_HEADER "Sampling Feature UUID: Front Stoop 716 Mohawk, Boulder, CO,,,\r\nSensor Name:,Maxim_DS18B20,LICOR_LI-190SA-50,EnviroDIY_Mayfly Data Logger,EnviroDIY_Mayfly Data Logger\r\nVariable Name:,Temperature_C,PAR,Battery_Voltage,Board_Temp_C\r\nResult Unit:,degreeCelsius,umol s^-1 m^-2,volt,degreeCelsius\r\nResult UUID:,[variable 1 UUID],[PAR UUID],[variable 1 UUID],[variable 1 UUID]\r\nDate and Time in MDT,Temperature,PPFD,Battery voltage,Temperature"
 
-#define   ONE_WIRE_BUS 4 // pin 4 (D4-5)
+#define   ONE_WIRE_BUS 4 // pin 4 (D4)
 
 RTCTimer  timer;
 
@@ -309,7 +309,7 @@ void greenred4flash()
  
 void setupLogFile()
 {
-  // Initialise the SD card
+  // Initialize the SD card
   if (!SD.begin(SD_SS_PIN))
   {
     Serial.println("Error: SD card failed to initialize or is missing.");
@@ -430,9 +430,14 @@ String createDataRecord()
     
   }
   // PAR ------------------------------------------------------
-
+  digitalWrite(PWR_SWITCH_PIN, HIGH);
+  delay(100);
+  PARsenseValue = analogRead(UTA_PIN);
+  digitalWrite(PWR_SWITCH_PIN, LOW);
+  PAR = 3.3 * (PARsenseValue/1023.) * 173.61 / 0.24;
+   
   data += ",";
-  addFloatToString(data, 1852.2413, 6, 2);  // need to swap in an actual value, but let's use a constant dummy number for now.
+  addFloatToString(data, PAR, 6, 2);  // need to swap in an actual value, but let's use a constant dummy number for now.
 
   // Battery Voltage and Board Temperature --------------------
 
@@ -511,7 +516,7 @@ void setup()
   pinMode(8, OUTPUT);
   pinMode(9, OUTPUT);
   pinMode(PWR_SWITCH_PIN, OUTPUT);
- 
+   
   greenred4flash(); // blink the LEDs to show the board is on
 
   sensors.begin(); // start up the library
