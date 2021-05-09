@@ -4,6 +4,7 @@ Firmware to log photosynthetically active radiation (PAR) using a Mayfly board f
 ## Meta
 Matt Findley - @MattCFindley(https://twitter.com/MattCFindley) - MatthewFindley@Hotmail.com
 
-Distributed under the XYZ license.  See ''LICENSE'' for more information.
+Distributed under the GNU General Public License v3.0.  See ''LICENSE'' for more information.
+
 
 
