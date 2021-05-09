@@ -2,7 +2,7 @@
  * ------------------------------------------------------------
  * 
  * This sketch wakes the Mayfly up at specific times, records 
- * the PAR & temp/RH from the attached probes, writes the data to 
+ * PAR from the attached sensor, writes the data to 
  * the microSD card, prints the data string to the serial port
  * and goes back to sleep.
  * 
@@ -22,8 +22,6 @@
 #include  <Sodaq_DS3231.h> // library for the DS3231 RTC
 #include  <Sodaq_PcInt.h> // library to handle Pin Change Interrupts
 
-#include <DHT.h> // library to read the DHT22 temp/RH sensor
-
 #define   RTC_PIN A7 // RTC Interrupt pin
 #define   RTC_INT_PERIOD EveryMinute
  
@@ -32,18 +30,17 @@
 #define   PWR_SWITCH_PIN 22 // Digital pin 22 switches the power on and off
 
 #define   UTA_PIN A0 // reads the LI-COR through the UTA using analog pin A0
-#define   DHTTYPE DHT22
+
+#define   TRANSCONDUCTANCE_GAIN 0.24
+#define   MAX_VOLTAGE 3.3
+#define   PAR_MULTIPLIER 173.61
 
 char*     filename = (char*)"logfile.csv"; // The data log file
 
 // Data Header
-#define   DATA_HEADER "Sampling Feature UUID: XXXX,,,\r\nSensor Name:,DHT22,DHT22,LICOR_LI-190SA-50,EnviroDIY_Mayfly Data Logger,EnviroDIY_Mayfly Data Logger\r\nVariable Name:,Temperature_C,Relative_Humidity,PAR,Battery_Voltage,Board_Temp_C\r\nResult Unit:,degreeCelsius,percent,umol s^-1 m^-2,volt,degreeCelsius\r\nResult UUID:,[variable 1 UUID],[PAR UUID],[variable 1 UUID],[variable 1 UUID]\r\nDate and Time in MST (UTC-7),Temperature,RH,PPFD,Battery voltage,Temperature"
-
-#define   DHTPIN 4 // digital pin 4 (D4)
+#define   DATA_HEADER "Sampling Feature: Manitou Exp. Forest Tower\r\nSensor Name:,LICOR_LI-190SA-50,EnviroDIY_Mayfly Data Logger,EnviroDIY_Mayfly Data Logger\r\nVariable Name:,PAR,Battery_Voltage,Board_Temp_C\r\nResult Unit:,umol s^-1 m^-2,volt,degreeCelsius\r\nDate and Time in MST (UTC-7),PPFD,Battery voltage,Temperature"
 
 RTCTimer  timer;
-
-DHT dht(DHTPIN, DHTTYPE);
 
 String    dataRec = "";
 
@@ -348,7 +345,7 @@ void logData(String rec)
  * 
  * Create a String type data record in csv format:
  * 
- * DateTime, SensorTemp_C, BatteryVoltage, 
+ * DateTime, SensorPAR, BatteryVoltage, 
  * BoardTemp_C 
  * 
  * --------------------------------------------------
@@ -359,29 +356,14 @@ String createDataRecord()
   String data = getDateTime();
   data += ",";
 
-  // Temp/RH Sensor ----------------------------------------
-
-  float tempC = dht.readTemperature();
-  float rh = dht.readHumidity();
-
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(rh) || isnan(tempC)) {
-    Serial.println(F("Failed to read from DHT sensor!"));
-  }
-  
-  data += tempC; // temperature Celcius
-  data += ",";
-  data += rh; // relative humidity
-
   // PAR ------------------------------------------------------
   digitalWrite(PWR_SWITCH_PIN, HIGH);
   delay(100);
   PARsenseValue = analogRead(UTA_PIN);
   digitalWrite(PWR_SWITCH_PIN, LOW);
-  PAR = 3.3 * (PARsenseValue/1023.) * 173.61 / 0.24;
+  PAR = MAX_VOLTAGE * (PARsenseValue/1023.) * PAR_MULTIPLIER / TRANSCONDUCTANCE_GAIN;
    
-  data += ",";
-  addFloatToString(data, PAR, 6, 2);  // need to swap in an actual value, but let's use a constant dummy number for now.
+  addFloatToString(data, PAR, 6, 2);  
 
   // Battery Voltage and Board Temperature --------------------
 
@@ -406,13 +388,6 @@ String createDataRecord()
   
   // For Mayfly v0.5 and newer:
   batteryvoltage = (3.3/1023.) * 4.7 * batterysenseValue; 
-
-  /*
-   * Removed from DataRecord
-   */
-   
-  // data += ",";
-  // data += currentepochtime;
 
   data += ",";
   
@@ -463,13 +438,11 @@ void setup()
    
   greenred4flash(); // blink the LEDs to show the board is on
 
-  dht.begin(); // start up the DHT22 library
-
   setupLogFile();
   setupTimer(); // Setup timer events
   setupSleep(); // Setup sleep mode
  
-  Serial.println("Power On, running: PAR & Temp/RH Logging");
+  Serial.println("Power On, running: PAR Logging");
   Serial.print("\n\r");
   Serial.println(DATA_HEADER);
   Serial.print("\n\r"); 
