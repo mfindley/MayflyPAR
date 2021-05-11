@@ -1,0 +1,3 @@
+testing MayflyPAR prototype on the back deck with the sensor on the fence south of the house.  This was a test of the code running only the PAR sensor - no external temperature or temp/rh.
+
+MF
