@@ -1,3 +1,0 @@
-set up mayfly to run overnight with PAR and a temp/RH sensor plugged in.
-
-set on my desk, in the dark.  running off USB power ... not a very interesting dataset.
